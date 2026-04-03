@@ -49,8 +49,10 @@
                         <th>Catégorie</th>
                         <th>Priorité</th>
                         <th>Statut</th>
+                        <th>Attribué à</th>
                         <th>Date de création</th>
                         <th>Dernière mise à jour</th>
+                        <th>Action</th>
                     </tr>
                 </thead>
 
@@ -111,12 +113,18 @@
                                     {{ $statusLabel }}
                                 </span>
                             </td>
+                            <td>{{ $ticket->agent?->username ?? 'Non attribué' }}</td>
                             <td>{{ \Carbon\Carbon::parse($ticket->created_at)->format('Y-m-d') }}</td>
                             <td>{{ \Carbon\Carbon::parse($ticket->updated_at)->format('Y-m-d') }}</td>
+                            <td>
+                                <a href="{{ route('user.tickets.show', $ticket->id) }}" class="btn secondary">
+                                    Voir
+                                </a>
+                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7">
+                            <td colspan="9">
                                 <div class="empty-state">
                                     Aucun ticket en cours.
                                 </div>

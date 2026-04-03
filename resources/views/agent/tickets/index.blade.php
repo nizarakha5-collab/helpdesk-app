@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de bord agent</title>
+    <title>Liste des tickets</title>
 
     <style>
         *{box-sizing:border-box;margin:0;padding:0;font-family:"Montserrat",Arial,sans-serif}
@@ -57,7 +57,6 @@
             opacity:.95;flex-shrink:0
         }
         .menu-item.active .menu-icon{opacity:1;filter:grayscale(100%) brightness(360%)}
-
         .badge{
             margin-left:auto;
             min-width:28px;height:22px;border-radius:999px;
@@ -88,10 +87,18 @@
 
         .content{padding:28px 24px}
 
-        .welcome-card{
+        .welcome-card,
+        .filters-card,
+        .table-card,
+        .stat-card,
+        .quick-card{
             background:#fff;border-radius:18px;border:1px solid #e8edf5;
-            padding:24px;box-shadow:0 8px 26px rgba(31,42,68,.04);
-            margin-bottom:22px
+            box-shadow:0 8px 26px rgba(31,42,68,.04)
+        }
+
+        .welcome-card{
+            padding:24px;
+            margin-bottom:22px;
         }
         .welcome-title{font-size:2rem;font-weight:800;color:#23345d;margin-bottom:10px}
         .welcome-text{font-size:1rem;color:#6f7d99;line-height:1.7}
@@ -99,44 +106,85 @@
 
         .stats-grid{
             display:grid;
-            grid-template-columns:repeat(3,1fr);
+            grid-template-columns:repeat(5,1fr);
             gap:18px;
             margin-bottom:22px
         }
-        .stat-card{
-            background:#fff;border-radius:18px;border:1px solid #e8edf5;
-            padding:22px;box-shadow:0 8px 26px rgba(31,42,68,.04)
-        }
+        .stat-card{padding:22px}
         .stat-label{font-size:.9rem;color:#7b88a5;margin-bottom:10px;font-weight:600}
         .stat-value{font-size:2rem;font-weight:800;color:#23345d}
 
-        .table-card{
-            background:#fff;border-radius:18px;border:1px solid #e8edf5;
-            box-shadow:0 8px 26px rgba(31,42,68,.04);
-            overflow:hidden;
-            margin-bottom:22px
+        .filters-card{
+            padding:20px;
+            margin-bottom:22px;
         }
-        .section-header{
+        .filters-title{
+            font-size:1rem;
+            font-weight:700;
+            color:#2a3756;
+            margin-bottom:16px;
+        }
+        .filters-grid{
+            display:grid;
+            grid-template-columns:repeat(4,1fr);
+            gap:14px;
+            align-items:end;
+        }
+        .field label{
+            display:block;
+            margin-bottom:8px;
+            font-size:.9rem;
+            color:#60708f;
+            font-weight:700;
+        }
+        .field select{
+            width:100%;
+            height:54px;
+            border:1px solid #d8e1ef;
+            border-radius:14px;
+            padding:0 16px;
+            background:#fff;
+            color:#23345d;
+            outline:none;
+            font-size:.95rem;
+        }
+        .btn{
+            height:54px;
+            border:none;
+            border-radius:14px;
+            padding:0 22px;
+            cursor:pointer;
+            font-weight:700;
+            text-decoration:none;
+            display:inline-flex;
+            align-items:center;
+            justify-content:center;
+            font-size:.95rem;
+        }
+        .btn-primary{background:#2f89d9;color:#fff}
+        .btn-light{background:#eef3ff;color:#2f6fd9}
+
+        .table-card{
+            overflow:hidden;
+            margin-bottom:22px;
+        }
+        .section-header,
+        .table-head{
             display:flex;align-items:center;justify-content:space-between;
             padding:18px 20px;border-bottom:1px solid #edf2f8
         }
-        .section-title{font-size:1rem;font-weight:700;color:#2a3756}
+        .section-title,
+        .table-title{font-size:1rem;font-weight:700;color:#2a3756}
         .table-wrap{overflow:auto}
         table{width:100%;border-collapse:collapse}
         th,td{padding:16px 18px;text-align:left;border-bottom:1px solid #edf2f8;font-size:.95rem}
         th{background:#f8fbff;color:#60708f;font-weight:700}
         td{color:#23345d}
 
-        .ticket-link{
-            text-decoration:none;
-            color:#2f6fd9;
-            font-weight:700;
-        }
-
         .status-badge,
         .priority-badge{
             display:inline-flex;align-items:center;justify-content:center;
-            padding:6px 12px;border-radius:999px;font-size:.8rem;font-weight:800
+            padding:6px 14px;border-radius:999px;font-size:.82rem;font-weight:800
         }
         .status-open{background:#e8f2ff;color:#2563eb}
         .status-pending{background:#fff4db;color:#b7791f}
@@ -149,9 +197,14 @@
         .priority-high{background:#fff7ed;color:#c2410c}
         .priority-urgent{background:#fef2f2;color:#b91c1c}
 
+        .ticket-link{
+            color:#2f6fd9;
+            font-weight:700;
+            text-decoration:none;
+        }
+
         .quick-card{
-            background:#fff;border-radius:18px;border:1px solid #e8edf5;overflow:hidden;
-            box-shadow:0 8px 26px rgba(31,42,68,.04)
+            overflow:hidden;
         }
         .quick-header{
             display:flex;align-items:center;justify-content:space-between;
@@ -179,9 +232,12 @@
             font-weight:600;
         }
 
+        @media(max-width:1300px){
+            .stats-grid{grid-template-columns:repeat(2,1fr)}
+        }
         @media(max-width:1100px){
             .sidebar{width:230px}
-            .stats-grid{grid-template-columns:1fr}
+            .filters-grid{grid-template-columns:1fr 1fr}
             .quick-links{grid-template-columns:1fr}
         }
         @media(max-width:900px){
@@ -189,6 +245,8 @@
             .sidebar{width:100%}
             .content{padding:18px}
             .topbar{padding:0 18px}
+            .filters-grid{grid-template-columns:1fr}
+            .stats-grid{grid-template-columns:1fr}
         }
     </style>
 </head>
@@ -209,7 +267,7 @@
         'urgent' => 'priority-urgent',
     ];
 
-    $activeTicketsCount = $openTickets + $pendingTickets + $inProgressTickets;
+    $activeTicketsCount = $stats['open'] + $stats['pending'] + $stats['in_progress'];
 @endphp
 
 <div class="dashboard">
@@ -221,12 +279,12 @@
 
         <div class="sidebar-section-title">Agent</div>
         <nav class="menu">
-            <a href="{{ route('agent.dashboard') }}" class="menu-item active">
+            <a href="{{ route('agent.dashboard') }}" class="menu-item">
                 <span class="menu-icon">◔</span>
                 <span>Tableau de bord</span>
             </a>
 
-            <a href="{{ route('agent.tickets.index') }}" class="menu-item">
+            <a href="{{ route('agent.tickets.index') }}" class="menu-item active">
                 <span class="menu-icon">☰</span>
                 <span>Tickets</span>
                 <span class="badge">{{ $activeTicketsCount }}</span>
@@ -276,7 +334,7 @@
 
     <main class="main">
         <header class="topbar">
-            <div class="topbar-title">Tableau de bord agent</div>
+            <div class="topbar-title">Liste des tickets</div>
 
             <div class="topbar-right">
                 <a href="{{ route('agent.tickets.index', ['status' => 'open']) }}" class="top-btn primary">
@@ -292,38 +350,96 @@
             @endif
 
             <div class="welcome-card">
-                <h1 class="welcome-title">Bienvenue, {{ session('user_name') }}</h1>
+                <h1 class="welcome-title">Gestion des tickets</h1>
 
-                <p class="welcome-text" style="margin-top:10px;">
-                    <strong>E-mail :</strong> {{ session('user_email') }}
+                <p class="welcome-text">
+                    <strong>Agent :</strong> {{ session('user_name') }}
                 </p>
 
-                <p class="welcome-text" style="margin-top:10px;">
-                    <strong>Tickets qui me sont attribués :</strong> {{ $myTickets }}
+                <p class="welcome-text" style="margin-top:8px;">
+                    <strong>Tickets actifs :</strong> {{ $activeTicketsCount }}
                 </p>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Nouveaux tickets</div>
-                    <div class="stat-value">{{ $openTickets }}</div>
+                    <div class="stat-label">Total</div>
+                    <div class="stat-value">{{ $stats['total'] }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">Tickets en cours</div>
-                    <div class="stat-value">{{ $inProgressTickets }}</div>
+                    <div class="stat-label">Ouverts</div>
+                    <div class="stat-value">{{ $stats['open'] }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">Tickets résolus</div>
-                    <div class="stat-value">{{ $resolvedTickets }}</div>
+                    <div class="stat-label">En attente</div>
+                    <div class="stat-value">{{ $stats['pending'] }}</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">En cours</div>
+                    <div class="stat-value">{{ $stats['in_progress'] }}</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-label">Résolus / fermés</div>
+                    <div class="stat-value">{{ $stats['resolved'] }}</div>
                 </div>
             </div>
 
+            <div class="filters-card">
+                <div class="filters-title">Filtres</div>
+
+                <form method="GET" action="{{ route('agent.tickets.index') }}">
+                    <div class="filters-grid">
+                        <div class="field">
+                            <label>Statut</label>
+                            <select name="status">
+                                <option value="">Tous</option>
+                                <option value="open" {{ ($filters['status'] ?? '') === 'open' ? 'selected' : '' }}>Ouvert</option>
+                                <option value="pending" {{ ($filters['status'] ?? '') === 'pending' ? 'selected' : '' }}>En attente</option>
+                                <option value="in_progress" {{ ($filters['status'] ?? '') === 'in_progress' ? 'selected' : '' }}>En cours</option>
+                                <option value="resolved" {{ ($filters['status'] ?? '') === 'resolved' ? 'selected' : '' }}>Résolu</option>
+                                <option value="closed" {{ ($filters['status'] ?? '') === 'closed' ? 'selected' : '' }}>Fermé</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>Priorité</label>
+                            <select name="priority">
+                                <option value="">Toutes</option>
+                                <option value="low" {{ ($filters['priority'] ?? '') === 'low' ? 'selected' : '' }}>Faible</option>
+                                <option value="medium" {{ ($filters['priority'] ?? '') === 'medium' ? 'selected' : '' }}>Moyenne</option>
+                                <option value="high" {{ ($filters['priority'] ?? '') === 'high' ? 'selected' : '' }}>Élevée</option>
+                                <option value="urgent" {{ ($filters['priority'] ?? '') === 'urgent' ? 'selected' : '' }}>Urgente</option>
+                            </select>
+                        </div>
+
+                        <div class="field">
+                            <label>Catégorie</label>
+                            <select name="category">
+                                <option value="">Toutes</option>
+                                @foreach($availableCategories as $category)
+                                    <option value="{{ $category }}" {{ ($filters['category'] ?? '') === $category ? 'selected' : '' }}>
+                                        {{ $category }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+
+                        <div style="display:flex;gap:10px;">
+                            <button type="submit" class="btn btn-primary">Appliquer</button>
+                            <a href="{{ route('agent.tickets.index') }}" class="btn btn-light">Réinitialiser</a>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
             <div class="table-card">
-                <div class="section-header">
-                    <div class="section-title">Derniers tickets</div>
-                    <a href="{{ route('agent.tickets.index') }}" class="top-btn">Voir tout</a>
+                <div class="table-head">
+                    <div class="table-title">Liste complète</div>
+                    <a href="{{ route('agent.dashboard') }}" class="top-btn">Retour au tableau de bord</a>
                 </div>
 
                 <div class="table-wrap">
@@ -333,17 +449,33 @@
                                 <th>Code</th>
                                 <th>Sujet</th>
                                 <th>Utilisateur</th>
-                                <th>Statut</th>
+                                <th>Catégorie</th>
                                 <th>Priorité</th>
+                                <th>Statut</th>
+                                <th>Attribué à</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse($latestTickets as $ticket)
+                            @forelse($tickets as $ticket)
                                 <tr>
                                     <td>{{ $ticket->code }}</td>
                                     <td>{{ $ticket->subject }}</td>
                                     <td>{{ $ticket->user?->username ?? '---' }}</td>
+                                    <td>{{ $ticket->category }}</td>
+                                    <td>
+                                        <span class="priority-badge {{ $priorityClasses[$ticket->priority] ?? 'priority-medium' }}">
+                                            @if($ticket->priority === 'low')
+                                                Faible
+                                            @elseif($ticket->priority === 'medium')
+                                                Moyenne
+                                            @elseif($ticket->priority === 'high')
+                                                Élevée
+                                            @else
+                                                Urgente
+                                            @endif
+                                        </span>
+                                    </td>
                                     <td>
                                         <span class="status-badge {{ $statusClasses[$ticket->status] ?? 'status-open' }}">
                                             @if($ticket->status === 'open')
@@ -359,28 +491,16 @@
                                             @endif
                                         </span>
                                     </td>
-                                    <td>
-                                        <span class="priority-badge {{ $priorityClasses[$ticket->priority] ?? 'priority-medium' }}">
-                                            @if($ticket->priority === 'low')
-                                                Faible
-                                            @elseif($ticket->priority === 'medium')
-                                                Moyenne
-                                            @elseif($ticket->priority === 'high')
-                                                Élevée
-                                            @else
-                                                Urgente
-                                            @endif
-                                        </span>
-                                    </td>
+                                    <td>{{ $ticket->agent?->username ?? 'Non attribué' }}</td>
                                     <td>
                                         <a href="{{ route('agent.tickets.show', $ticket->id) }}" class="ticket-link">
-                                            Ouvrir
+                                            Voir
                                         </a>
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6">Aucun ticket trouvé.</td>
+                                    <td colspan="8">Aucun ticket trouvé.</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -394,24 +514,24 @@
                 </div>
 
                 <div class="quick-links">
-                    <a href="{{ route('agent.tickets.index') }}" class="quick-link">
-                        <div class="quick-link-title">Tickets</div>
-                        <div class="quick-link-text">Liste complète des tickets et filtres.</div>
+                    <a href="{{ route('agent.tickets.index', ['status' => 'open']) }}" class="quick-link">
+                        <div class="quick-link-title">Tickets ouverts</div>
+                        <div class="quick-link-text">Affiche uniquement les tickets ouverts qui attendent une prise en charge.</div>
                     </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Chat admin</div>
-                        <div class="quick-link-text">Escalade et questions à l’administrateur.</div>
+                    <a href="{{ route('agent.tickets.index', ['status' => 'in_progress']) }}" class="quick-link">
+                        <div class="quick-link-title">Tickets en cours</div>
+                        <div class="quick-link-text">Retrouve rapidement les tickets déjà pris en charge.</div>
                     </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Historique</div>
-                        <div class="quick-link-text">Historique des tickets résolus.</div>
+                    <a href="{{ route('agent.tickets.index', ['status' => 'resolved']) }}" class="quick-link">
+                        <div class="quick-link-title">Tickets résolus</div>
+                        <div class="quick-link-text">Consulte les tickets terminés et prêts pour l’historique.</div>
                     </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Rapports</div>
-                        <div class="quick-link-text">Statistiques et performance.</div>
+                    <a href="{{ route('agent.dashboard') }}" class="quick-link">
+                        <div class="quick-link-title">Tableau de bord</div>
+                        <div class="quick-link-text">Retourne au tableau de bord principal de l’agent.</div>
                     </a>
                 </div>
             </div>

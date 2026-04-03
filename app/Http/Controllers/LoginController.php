@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ticket;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -33,9 +34,7 @@ class LoginController extends Controller
             ]);
         }
 
-        // Admin: kydkhl direct
         if ($user->role !== 'admin') {
-
             if ($user->status === 'pending_email') {
                 session(['verify_email' => $user->email]);
 
@@ -79,7 +78,7 @@ class LoginController extends Controller
             return redirect()->route('agent.dashboard');
         }
 
-        return redirect()->route('dashboard');
+        return redirect()->route('user.dashboard');
     }
 
     public function dashboard()
@@ -92,6 +91,23 @@ class LoginController extends Controller
 
         $user = User::findOrFail(session('user_id'));
 
-        return view('user.dashboard', compact('user'));
+        $openTickets = Ticket::where('user_id', $user->id)
+            ->where('status', 'open')
+            ->count();
+
+        $pendingTickets = Ticket::where('user_id', $user->id)
+            ->where('status', 'pending')
+            ->count();
+
+        $resolvedTickets = Ticket::where('user_id', $user->id)
+            ->where('status', 'resolved')
+            ->count();
+
+        return view('user.dashboard', compact(
+            'user',
+            'openTickets',
+            'pendingTickets',
+            'resolvedTickets'
+        ));
     }
 }

@@ -1,9 +1,30 @@
+@php
+    $dashboardUrl = Route::has('user.dashboard') ? route('user.dashboard') : '#';
+    $createTicketUrl = Route::has('user.tickets.create') ? route('user.tickets.create') : '#';
+    $myTicketsUrl = Route::has('user.tickets.index') ? route('user.tickets.index') : '#';
+    $historyUrl = Route::has('user.tickets.history') ? route('user.tickets.history') : '#';
+    $profileUrl = Route::has('user.profile') ? route('user.profile') : '#';
+    $logoutUrl = Route::has('logout') ? route('logout') : '#';
+
+    $displayName = $user->username ?? session('user_name', 'Utilisateur');
+    $displayEmail = $user->email ?? session('user_email', '-');
+
+    $birthDate = '-';
+    if (!empty($user->date_naissance)) {
+        try {
+            $birthDate = \Carbon\Carbon::parse($user->date_naissance)->format('Y-m-d');
+        } catch (\Throwable $e) {
+            $birthDate = $user->date_naissance;
+        }
+    }
+@endphp
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Dashboard</title>
+    <title>Tableau de bord utilisateur</title>
 
     <style>
         * {
@@ -23,7 +44,6 @@
             min-height: 100vh;
         }
 
-        /* Sidebar */
         .sidebar {
             width: 280px;
             background: linear-gradient(180deg, #1b2434 0%, #243247 100%);
@@ -98,7 +118,6 @@
             color: #ffffff;
         }
 
-        /* icons/emojis white + aligned */
         .menu-icon {
             width: 22px;
             height: 22px;
@@ -131,7 +150,6 @@
             padding: 0 8px;
         }
 
-        /* Main */
         .main {
             flex: 1;
             display: flex;
@@ -164,30 +182,29 @@
         }
 
         .top-btn {
-    height: 46px;
-    padding: 0 20px;
-    border: 1px solid #d7dfec;
-    background: #ffffff;
-    border-radius: 12px;
-    color: #344563;
-    font-size: 0.94rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    white-space: nowrap;
-}
+            height: 46px;
+            padding: 0 20px;
+            border: 1px solid #d7dfec;
+            background: #ffffff;
+            border-radius: 12px;
+            color: #344563;
+            font-size: 0.94rem;
+            font-weight: 700;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            white-space: nowrap;
+        }
 
-.top-btn.primary {
-    background: #2f89d9;
-    border-color: #2f89d9;
-    color: #ffffff;
-}
+        .top-btn.primary {
+            background: #2f89d9;
+            border-color: #2f89d9;
+            color: #ffffff;
+        }
 
-        /* Avatar button */
-        .avatar-btn{
+        .avatar-btn {
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -201,7 +218,7 @@
             justify-content: center;
         }
 
-        .avatar-fallback{
+        .avatar-fallback {
             width: 40px;
             height: 40px;
             border-radius: 50%;
@@ -214,15 +231,14 @@
             font-weight: 800;
         }
 
-        .avatar-img{
+        .avatar-img {
             width: 40px;
             height: 40px;
             object-fit: cover;
             display: block;
         }
 
-        /* Dropdown (read-only mini profile) */
-        .profile-dropdown{
+        .profile-dropdown {
             position: absolute;
             top: 58px;
             right: 0;
@@ -236,106 +252,112 @@
             z-index: 50;
         }
 
-        .profile-dropdown.open{ display:block; }
-
-        .pd-head{
-            display:flex;
-            gap:12px;
-            align-items:center;
-            padding-bottom:12px;
-            border-bottom:1px solid #edf2f8;
-            margin-bottom:12px;
+        .profile-dropdown.open {
+            display: block;
         }
 
-        .pd-photo{
-            width:44px;
-            height:44px;
-            border-radius:14px;
-            overflow:hidden;
-            border:1px solid #edf2f8;
-            background:#f8fbff;
-            display:flex;
-            align-items:center;
-            justify-content:center;
-            flex-shrink:0;
+        .pd-head {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #edf2f8;
+            margin-bottom: 12px;
         }
 
-        .pd-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
-
-        .pd-name{
-            font-weight:800;
-            color:#23345d;
-            font-size:1rem;
-            line-height:1.2;
+        .pd-photo {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid #edf2f8;
+            background: #f8fbff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
         }
 
-        .pd-email{
-            color:#7b88a5;
-            font-size:.9rem;
-            margin-top:2px;
+        .pd-photo img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
         }
 
-        .pd-grid{
-            display:grid;
-            grid-template-columns:1fr 1fr;
-            gap:10px;
+        .pd-name {
+            font-weight: 800;
+            color: #23345d;
+            font-size: 1rem;
+            line-height: 1.2;
         }
 
-        .pd-item{
-            background:#f8fbff;
-            border:1px solid #e4ebf7;
-            border-radius:14px;
-            padding:10px 12px;
-            min-height:54px;
+        .pd-email {
+            color: #7b88a5;
+            font-size: .9rem;
+            margin-top: 2px;
         }
 
-        .pd-label{
-            font-size:.78rem;
-            color:#7b88a5;
-            font-weight:700;
-            margin-bottom:4px;
+        .pd-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
         }
 
-        .pd-value{
-            font-size:.93rem;
-            color:#23345d;
-            font-weight:700;
+        .pd-item {
+            background: #f8fbff;
+            border: 1px solid #e4ebf7;
+            border-radius: 14px;
+            padding: 10px 12px;
+            min-height: 54px;
+        }
+
+        .pd-label {
+            font-size: .78rem;
+            color: #7b88a5;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .pd-value {
+            font-size: .93rem;
+            color: #23345d;
+            font-weight: 700;
             word-break: break-word;
         }
 
-        .pd-actions{
-            margin-top:12px;
-            display:flex;
-            gap:10px;
+        .pd-actions {
+            margin-top: 12px;
+            display: flex;
+            gap: 10px;
         }
 
-        .pd-link{
-            flex:1;
-            height:40px;
-            border-radius:12px;
-            border:1px solid #d7dfec;
-            background:#ffffff;
-            color:#344563;
-            font-weight:800;
-            font-size:.9rem;
-            cursor:pointer;
-            text-decoration:none;
-            display:flex;
-            align-items:center;
-            justify-content:center;
+        .pd-link {
+            flex: 1;
+            height: 40px;
+            border-radius: 12px;
+            border: 1px solid #d7dfec;
+            background: #ffffff;
+            color: #344563;
+            font-weight: 800;
+            font-size: .9rem;
+            cursor: pointer;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .pd-link.primary{
-            background:#2f89d9;
-            border-color:#2f89d9;
-            color:#fff;
+        .pd-link.primary {
+            background: #2f89d9;
+            border-color: #2f89d9;
+            color: #fff;
         }
 
         .content {
             padding: 28px 24px;
         }
 
-        /* Cards */
         .welcome-card {
             background: #ffffff;
             border-radius: 18px;
@@ -458,7 +480,7 @@
             .sidebar { width: 100%; }
             .content { padding: 18px; }
             .topbar { padding: 0 18px; }
-            .profile-dropdown{ right: 0; width: 92vw; max-width: 360px; }
+            .profile-dropdown { right: 0; width: 92vw; max-width: 360px; }
         }
     </style>
 </head>
@@ -470,35 +492,30 @@
             <div class="brand">HELPDESK</div>
         </div>
 
-        <div class="sidebar-section-title">General</div>
+        <div class="sidebar-section-title">Général</div>
         <nav class="menu">
-            <a href="#" class="menu-item active">
+            <a href="{{ $dashboardUrl }}" class="menu-item {{ request()->routeIs('user.dashboard') ? 'active' : '' }}">
                 <span class="menu-icon">◔</span>
                 <span>Dashboard</span>
             </a>
 
-            <a href="{{ route('user.tickets.create') }}" class="menu-item">
+            <a href="{{ $createTicketUrl }}" class="menu-item {{ request()->routeIs('user.tickets.create') ? 'active' : '' }}">
                 <span class="menu-icon">＋</span>
-                <span>Create Ticket</span>
+                <span>Créer un ticket</span>
             </a>
 
-            <a href="{{ route('user.tickets.index') }}" class="menu-item">
+            <a href="{{ $myTicketsUrl }}" class="menu-item {{ request()->routeIs('user.tickets.index') ? 'active' : '' }}">
                 <span class="menu-icon">☰</span>
-                <span>My Tickets</span>
+                <span>Mes tickets</span>
             </a>
 
-            <a href="{{ route('user.tickets.history') }}" class="menu-item">
+            <a href="{{ $historyUrl }}" class="menu-item {{ request()->routeIs('user.tickets.history') ? 'active' : '' }}">
                 <span class="menu-icon">🕘</span>
-                <span>Ticket History</span>
-            </a>
-
-            <a href="#" class="menu-item">
-                <span class="menu-icon">✎</span>
-                <span>Ticket Details</span>
+                <span>Historique</span>
             </a>
         </nav>
 
-        <div class="sidebar-section-title">Account</div>
+        <div class="sidebar-section-title">Compte</div>
         <nav class="menu">
             <a href="#" class="menu-item">
                 <span class="menu-icon">🔔</span>
@@ -506,42 +523,41 @@
                 <span class="badge">0</span>
             </a>
 
-            <a href="{{ route('user.profile') }}" class="menu-item">
+            <a href="{{ $profileUrl }}" class="menu-item {{ request()->routeIs('user.profile') ? 'active' : '' }}">
                 <span class="menu-icon">👤</span>
-                <span>Profile</span>
+                <span>Profil</span>
             </a>
 
             <a href="#" class="menu-item">
                 <span class="menu-icon">⚙</span>
-                <span>Settings</span>
+                <span>Paramètres</span>
             </a>
 
-            <a href="{{ route('logout') }}" class="menu-item">
+            <a href="{{ $logoutUrl }}" class="menu-item">
                 <span class="menu-icon">⇦</span>
-                <span>Logout</span>
+                <span>Déconnexion</span>
             </a>
         </nav>
     </aside>
 
     <main class="main">
         <header class="topbar">
-            <div class="topbar-title">User Dashboard</div>
+            <div class="topbar-title">Tableau de bord utilisateur</div>
 
             <div class="topbar-right">
-       <a href="{{ route('user.tickets.create') }}" class="top-btn primary">New Ticket</a>
-                <!-- ✅ Avatar click -->
+                <a href="{{ $createTicketUrl }}" class="top-btn primary">Créer un ticket</a>
+
                 <div style="position:relative;">
                     <button class="avatar-btn" id="avatarBtn" type="button" aria-label="Open profile">
                         @if (!empty($user->avatar_path))
                             <img class="avatar-img" src="{{ asset('storage/' . $user->avatar_path) }}" alt="Avatar">
                         @else
                             <div class="avatar-fallback">
-                                {{ strtoupper(substr(session('user_name', 'U'), 0, 1)) }}
+                                {{ strtoupper(substr($displayName, 0, 1)) }}
                             </div>
                         @endif
                     </button>
 
-                    <!-- ✅ Read-only dropdown -->
                     <div class="profile-dropdown" id="profileDropdown">
                         <div class="pd-head">
                             <div class="pd-photo">
@@ -549,19 +565,20 @@
                                     <img src="{{ asset('storage/' . $user->avatar_path) }}" alt="Avatar">
                                 @else
                                     <span style="font-weight:900;color:#23345d;">
-                                        {{ strtoupper(substr($user->username ?? 'U', 0, 1)) }}
+                                        {{ strtoupper(substr($displayName, 0, 1)) }}
                                     </span>
                                 @endif
                             </div>
+
                             <div>
-                                <div class="pd-name">{{ $user->username }}</div>
-                                <div class="pd-email">{{ $user->email }}</div>
+                                <div class="pd-name">{{ $displayName }}</div>
+                                <div class="pd-email">{{ $displayEmail }}</div>
                             </div>
                         </div>
 
                         <div class="pd-grid">
                             <div class="pd-item">
-                                <div class="pd-label">Phone</div>
+                                <div class="pd-label">Téléphone</div>
                                 <div class="pd-value">{{ $user->phone ?? '-' }}</div>
                             </div>
 
@@ -581,26 +598,25 @@
                             </div>
 
                             <div class="pd-item">
-                                <div class="pd-label">Date naissance</div>
-                                <div class="pd-value">
-                                    {{ $user->date_naissance ? $user->date_naissance->format('Y-m-d') : '-' }}
-                                </div>
+                                <div class="pd-label">Date de naissance</div>
+                                <div class="pd-value">{{ $birthDate }}</div>
                             </div>
 
                             <div class="pd-item">
                                 <div class="pd-label">
-                                    @if ($user->type === 'prof')
+                                    @if (($user->type ?? null) === 'prof')
                                         Département
-                                    @elseif ($user->type === 'etudiant')
+                                    @elseif (($user->type ?? null) === 'etudiant')
                                         Filière / Année
                                     @else
                                         Info
                                     @endif
                                 </div>
+
                                 <div class="pd-value">
-                                    @if ($user->type === 'prof')
+                                    @if (($user->type ?? null) === 'prof')
                                         {{ $user->departement ?? '-' }}
-                                    @elseif ($user->type === 'etudiant')
+                                    @elseif (($user->type ?? null) === 'etudiant')
                                         {{ ($user->filiere ?? '-') . ' / ' . ($user->annee ?? '-') }}
                                     @else
                                         -
@@ -610,8 +626,8 @@
                         </div>
 
                         <div class="pd-actions">
-                            <a class="pd-link primary" href="{{ route('user.profile') }}">Voir Profil</a>
-                            <a class="pd-link" href="{{ route('logout') }}">Logout</a>
+                            <a class="pd-link primary" href="{{ $profileUrl }}">Voir profil</a>
+                            <a class="pd-link" href="{{ $logoutUrl }}">Déconnexion</a>
                         </div>
                     </div>
                 </div>
@@ -620,50 +636,47 @@
 
         <section class="content">
             <div class="welcome-card">
-                <h1 class="welcome-title">Bienvenue, {{ session('user_name') }}</h1>
-                <p class="welcome-text">
-                   
-                </p>
+                <h1 class="welcome-title">Bienvenue, {{ $displayName }}</h1>
                 <p class="welcome-text" style="margin-top: 10px;">
-                    <strong>E-mail :</strong> {{ session('user_email') }}
+                    <strong>E-mail :</strong> {{ $displayEmail }}
                 </p>
             </div>
 
             <div class="stats-grid">
                 <div class="stat-card">
-                    <div class="stat-label">Open Tickets</div>
-                    <div class="stat-value">0</div>
+                    <div class="stat-label">Tickets ouverts</div>
+                    <div class="stat-value">{{ $openTickets ?? 0 }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">Pending Tickets</div>
-                    <div class="stat-value">0</div>
+                    <div class="stat-label">Tickets en attente</div>
+                    <div class="stat-value">{{ $pendingTickets ?? 0 }}</div>
                 </div>
 
                 <div class="stat-card">
-                    <div class="stat-label">Resolved Tickets</div>
-                    <div class="stat-value">0</div>
+                    <div class="stat-label">Tickets résolus</div>
+                    <div class="stat-value">{{ $resolvedTickets ?? 0 }}</div>
                 </div>
             </div>
 
             <div class="quick-card">
                 <div class="quick-header">
-                    <div class="quick-title">Quick Access</div>
+                    <div class="quick-title">Accès rapide</div>
                 </div>
 
                 <div class="quick-links">
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Create Ticket</div>
+                    <a href="{{ $createTicketUrl }}" class="quick-link">
+                        <div class="quick-link-title">Créer un ticket</div>
                         <div class="quick-link-text">Créer une nouvelle demande d’assistance.</div>
                     </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">My Tickets</div>
+                    <a href="{{ $myTicketsUrl }}" class="quick-link">
+                        <div class="quick-link-title">Mes tickets</div>
                         <div class="quick-link-text">Consulter la liste de vos tickets.</div>
                     </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Ticket History</div>
+                    <a href="{{ $historyUrl }}" class="quick-link">
+                        <div class="quick-link-title">Historique</div>
                         <div class="quick-link-text">Voir les tickets résolus et archivés.</div>
                     </a>
 
@@ -681,13 +694,13 @@
     const avatarBtn = document.getElementById('avatarBtn');
     const dropdown = document.getElementById('profileDropdown');
 
-    function closeDropdown(){
-        dropdown.classList.remove('open');
+    function closeDropdown() {
+        dropdown?.classList.remove('open');
     }
 
     avatarBtn?.addEventListener('click', (e) => {
         e.stopPropagation();
-        dropdown.classList.toggle('open');
+        dropdown?.classList.toggle('open');
     });
 
     document.addEventListener('click', () => {
@@ -695,11 +708,12 @@
     });
 
     document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') closeDropdown();
+        if (e.key === 'Escape') {
+            closeDropdown();
+        }
     });
 
     dropdown?.addEventListener('click', (e) => {
-        // prevent closing when clicking inside dropdown
         e.stopPropagation();
     });
 </script>

@@ -13,6 +13,9 @@ use App\Http\Controllers\AdminUsersController;
 
 use App\Http\Controllers\AgentController;
 use App\Http\Controllers\UserProfileController;
+use App\Http\Controllers\UserTicketController;
+use App\Http\Controllers\Admin\CategoryController;
+use App\Http\Controllers\Auth\GoogleController;
 
 /*
 |--------------------------------------------------------------------------
@@ -55,6 +58,9 @@ Route::get('/logout', [LogoutController::class, 'logout'])->name('logout');
 Route::get('/auth/google', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
 Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('google.callback');
 
+Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
+Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
+
 /*
 |--------------------------------------------------------------------------
 | USER DASHBOARD + PROFILE
@@ -67,10 +73,18 @@ Route::post('/profile', [UserProfileController::class, 'update'])->name('user.pr
 
 /*
 |--------------------------------------------------------------------------
-| AGENT DASHBOARD
+| AGENT
 |--------------------------------------------------------------------------
 */
-Route::get('/agent/dashboard', [AgentController::class, 'dashboard'])->name('agent.dashboard');
+Route::prefix('agent')->name('agent.')->group(function () {
+    Route::get('/dashboard', [AgentController::class, 'dashboard'])->name('dashboard');
+
+    Route::get('/tickets', [AgentController::class, 'tickets'])->name('tickets.index');
+    Route::get('/tickets/{ticket}', [AgentController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/messages', [AgentController::class, 'storeMessage'])->name('tickets.messages.store');
+    Route::post('/tickets/{ticket}/assign-to-me', [AgentController::class, 'assignToMe'])->name('tickets.assign');
+    Route::post('/tickets/{ticket}/status', [AgentController::class, 'updateStatus'])->name('tickets.status');
+});
 
 /*
 |--------------------------------------------------------------------------
@@ -111,24 +125,22 @@ Route::get('/admin/accounts', [AdminUsersController::class, 'accountsList'])->na
 Route::post('/admin/accounts/delete/{id}', [AdminUsersController::class, 'delete'])
     ->name('admin.accounts.delete');
 
-use App\Http\Controllers\Admin\CategoryController;
-
 Route::prefix('admin')->name('admin.')->group(function () {
     Route::resource('categories', CategoryController::class)->except(['show']);
 });
-use App\Http\Controllers\Auth\GoogleController;
 
-Route::get('/auth/google/redirect', [GoogleController::class, 'redirect'])->name('google.redirect');
-Route::get('/auth/google/callback', [GoogleController::class, 'callback'])->name('google.callback');
-
-use App\Http\Controllers\UserTicketController;
-
+/*
+|--------------------------------------------------------------------------
+| USER TICKETS
+|--------------------------------------------------------------------------
+*/
 Route::prefix('user')->name('user.')->group(function () {
-   Route::get('/dashboard', [LoginController::class, 'dashboard'])->name('dashboard');
-
+    Route::get('/dashboard', [LoginController::class, 'dashboard'])->name('dashboard');
 
     Route::get('/tickets/create', [UserTicketController::class, 'create'])->name('tickets.create');
     Route::post('/tickets', [UserTicketController::class, 'store'])->name('tickets.store');
     Route::get('/tickets', [UserTicketController::class, 'index'])->name('tickets.index');
     Route::get('/tickets/history', [UserTicketController::class, 'history'])->name('tickets.history');
+    Route::get('/tickets/{ticket}', [UserTicketController::class, 'show'])->name('tickets.show');
+    Route::post('/tickets/{ticket}/messages', [UserTicketController::class, 'storeMessage'])->name('tickets.messages.store');
 });

@@ -19,7 +19,6 @@ class User extends Authenticatable
         'verification_code',
         'code_expires_at',
 
-        // profile fields
         'avatar_path',
         'phone',
         'type',
@@ -40,4 +39,9 @@ class User extends Authenticatable
         'code_expires_at' => 'datetime',
         'date_naissance' => 'date',
     ];
+
+    public function sentTicketMessages()
+    {
+        return $this->hasMany(TicketMessage::class, 'sender_id');
+    }
 }

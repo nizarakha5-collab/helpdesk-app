@@ -3,7 +3,7 @@
 
     if (!$currentUser) {
         $currentUser = (object) [
-            'username' => session('user_name', 'User'),
+            'username' => session('user_name', 'Utilisateur'),
             'email' => session('user_email', '-'),
             'avatar_path' => null,
             'phone' => null,
@@ -28,11 +28,11 @@
 @endphp
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@yield('title', 'User Dashboard')</title>
+    <title>@yield('title', 'Espace utilisateur')</title>
 
     <style>
         * {
@@ -674,33 +674,30 @@
             <div class="brand">HELPDESK</div>
         </div>
 
-        <div class="sidebar-section-title">General</div>
+        <div class="sidebar-section-title">Général</div>
         <nav class="menu">
-           @php
-    $dashboardUrl = Route::has('user.dashboard') ? route('user.dashboard') : '#';
-@endphp
-
-<a href="{{ $dashboardUrl }}" class="menu-item {{ request()->routeIs('user.dashboard') ? 'active' : '' }}">
-    <span class="menu-icon">◔</span>
-    <span>Dashboard</span>
-</a>
-            <a href="{{ route('user.tickets.create') }}" class="menu-item {{ request()->routeIs('user.tickets.create') ? 'active' : '' }}">
-                <span class="menu-icon">＋</span>
-                <span>Create Ticket</span>
+            <a href="{{ $dashboardRoute }}" class="menu-item {{ request()->routeIs('user.dashboard') ? 'active' : '' }}">
+                <span class="menu-icon">◔</span>
+                <span>Tableau de bord</span>
             </a>
 
-            <a href="{{ route('user.tickets.index') }}" class="menu-item {{ request()->routeIs('user.tickets.index') ? 'active' : '' }}">
+            <a href="{{ route('user.tickets.create') }}" class="menu-item {{ request()->routeIs('user.tickets.create') ? 'active' : '' }}">
+                <span class="menu-icon">＋</span>
+                <span>Créer un ticket</span>
+            </a>
+
+            <a href="{{ route('user.tickets.index') }}" class="menu-item {{ request()->routeIs('user.tickets.index') || request()->routeIs('user.tickets.show') ? 'active' : '' }}">
                 <span class="menu-icon">☰</span>
-                <span>My Tickets</span>
+                <span>Mes tickets</span>
             </a>
 
             <a href="{{ route('user.tickets.history') }}" class="menu-item {{ request()->routeIs('user.tickets.history') ? 'active' : '' }}">
                 <span class="menu-icon">🕘</span>
-                <span>Ticket History</span>
+                <span>Historique</span>
             </a>
         </nav>
 
-        <div class="sidebar-section-title">Account</div>
+        <div class="sidebar-section-title">Compte</div>
         <nav class="menu">
             <a href="#" class="menu-item">
                 <span class="menu-icon">🔔</span>
@@ -710,28 +707,28 @@
 
             <a href="{{ route('user.profile') }}" class="menu-item {{ request()->routeIs('user.profile') ? 'active' : '' }}">
                 <span class="menu-icon">👤</span>
-                <span>Profile</span>
+                <span>Profil</span>
             </a>
 
             <a href="#" class="menu-item">
                 <span class="menu-icon">⚙</span>
-                <span>Settings</span>
+                <span>Paramètres</span>
             </a>
 
             <a href="{{ route('logout') }}" class="menu-item">
                 <span class="menu-icon">⇦</span>
-                <span>Logout</span>
+                <span>Déconnexion</span>
             </a>
         </nav>
     </aside>
 
     <main class="main">
         <header class="topbar">
-            <div class="topbar-title">@yield('topbar_title', 'User Dashboard')</div>
+            <div class="topbar-title">@yield('topbar_title', 'Espace utilisateur')</div>
 
             <div class="topbar-right">
                 <a href="@yield('top_button_link', '#')" class="top-btn primary">
-                    @yield('top_button_text', 'New Ticket')
+                    @yield('top_button_text', 'Nouveau ticket')
                 </a>
 
                 <div style="position:relative;">
@@ -758,14 +755,14 @@
                             </div>
 
                             <div>
-                                <div class="pd-name">{{ $currentUser->username ?? 'User' }}</div>
+                                <div class="pd-name">{{ $currentUser->username ?? 'Utilisateur' }}</div>
                                 <div class="pd-email">{{ $currentUser->email ?? '-' }}</div>
                             </div>
                         </div>
 
                         <div class="pd-grid">
                             <div class="pd-item">
-                                <div class="pd-label">Phone</div>
+                                <div class="pd-label">Téléphone</div>
                                 <div class="pd-value">{{ $currentUser->phone ?? '-' }}</div>
                             </div>
 
@@ -785,7 +782,7 @@
                             </div>
 
                             <div class="pd-item">
-                                <div class="pd-label">Date naissance</div>
+                                <div class="pd-label">Date de naissance</div>
                                 <div class="pd-value">{{ $birthDate }}</div>
                             </div>
 
@@ -813,8 +810,8 @@
                         </div>
 
                         <div class="pd-actions">
-                            <a class="pd-link primary" href="{{ route('user.profile') }}">Voir Profil</a>
-                            <a class="pd-link" href="{{ route('logout') }}">Logout</a>
+                            <a class="pd-link primary" href="{{ route('user.profile') }}">Voir le profil</a>
+                            <a class="pd-link" href="{{ route('logout') }}">Déconnexion</a>
                         </div>
                     </div>
                 </div>
@@ -828,7 +825,7 @@
 
             @if ($errors->any())
                 <div class="flash-error">
-                    Kayn chi mouchkil f l form. Chouf l fields li ta7t.
+                    Une erreur est survenue. Vérifiez les champs saisis.
                 </div>
             @endif
 

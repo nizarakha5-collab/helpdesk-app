@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Ticket;
+use App\Models\User;
+use App\Models\TicketMessage;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
 
 class UserTicketController extends Controller
 {
@@ -13,75 +15,24 @@ class UserTicketController extends Controller
             return auth()->user();
         }
 
-        return (object) [
-            'username' => session('user_name', 'Utilisateur'),
-            'email' => session('user_email', '-'),
-            'avatar_path' => null,
-            'phone' => null,
-            'type' => null,
-            'cin' => null,
-            'cne' => null,
-            'date_naissance' => null,
-            'departement' => null,
-            'filiere' => null,
-            'annee' => null,
-        ];
+        $email = session('user_email');
+
+        if ($email) {
+            $user = User::where('email', $email)->first();
+
+            if ($user) {
+                return $user;
+            }
+        }
+
+        abort(403, 'Utilisateur non connecté.');
     }
 
-    protected function mockTickets(): Collection
+    protected function ensureTicketOwner(Ticket $ticket, User $user): void
     {
-        return collect([
-            (object) [
-                'id' => 1,
-                'code' => 'TCK-2026-0001',
-                'subject' => 'Problème de connexion à la plateforme',
-                'category' => 'Compte',
-                'priority' => 'high',
-                'status' => 'open',
-                'created_at' => '2026-03-20 10:30:00',
-                'updated_at' => '2026-03-25 09:15:00',
-            ],
-            (object) [
-                'id' => 2,
-                'code' => 'TCK-2026-0002',
-                'subject' => 'Demande de modification des informations',
-                'category' => 'Profil',
-                'priority' => 'medium',
-                'status' => 'pending',
-                'created_at' => '2026-03-18 14:20:00',
-                'updated_at' => '2026-03-24 11:45:00',
-            ],
-            (object) [
-                'id' => 3,
-                'code' => 'TCK-2026-0003',
-                'subject' => 'Erreur lors du téléchargement d’un fichier',
-                'category' => 'Technique',
-                'priority' => 'urgent',
-                'status' => 'in_progress',
-                'created_at' => '2026-03-16 08:10:00',
-                'updated_at' => '2026-03-26 12:00:00',
-            ],
-            (object) [
-                'id' => 4,
-                'code' => 'TCK-2026-0004',
-                'subject' => 'Demande d’assistance résolue',
-                'category' => 'Support',
-                'priority' => 'low',
-                'status' => 'resolved',
-                'created_at' => '2026-03-10 15:00:00',
-                'updated_at' => '2026-03-15 16:30:00',
-            ],
-            (object) [
-                'id' => 5,
-                'code' => 'TCK-2026-0005',
-                'subject' => 'Question sur le statut de la demande',
-                'category' => 'Suivi',
-                'priority' => 'medium',
-                'status' => 'closed',
-                'created_at' => '2026-03-05 09:00:00',
-                'updated_at' => '2026-03-12 13:20:00',
-            ],
-        ]);
+        if ((int) $ticket->user_id !== (int) $user->id) {
+            abort(403);
+        }
     }
 
     protected function categories(): array
@@ -96,6 +47,14 @@ class UserTicketController extends Controller
         ];
     }
 
+    protected function generateTicketCode(): string
+    {
+        $lastId = Ticket::max('id') ?? 0;
+        $nextId = $lastId + 1;
+
+        return 'TCK-' . now()->format('Y') . '-' . str_pad($nextId, 4, '0', STR_PAD_LEFT);
+    }
+
     public function create()
     {
         $user = $this->currentUser();
@@ -106,6 +65,8 @@ class UserTicketController extends Controller
 
     public function store(Request $request)
     {
+        $user = $this->currentUser();
+
         $request->validate([
             'subject' => ['required', 'string', 'max:255'],
             'category' => ['required', 'string', 'max:255'],
@@ -120,17 +81,15 @@ class UserTicketController extends Controller
             'description.min' => 'La description doit contenir au moins 10 caractères.',
         ]);
 
-        /*
-        |----------------------------------------------------------------------
-        | Étape actuelle
-        |----------------------------------------------------------------------
-        | Ici on garde encore une version temporaire sans enregistrement
-        | réel dans la base de données.
-        | Quand tu seras prêt, on remplacera ce bloc par :
-        |
-        | Ticket::create([...]);
-        |
-        */
+        Ticket::create([
+            'user_id' => $user->id,
+            'code' => $this->generateTicketCode(),
+            'subject' => $request->subject,
+            'category' => $request->category,
+            'priority' => $request->priority,
+            'status' => 'open',
+            'description' => $request->description,
+        ]);
 
         return redirect()
             ->route('user.tickets.index')
@@ -141,9 +100,11 @@ class UserTicketController extends Controller
     {
         $user = $this->currentUser();
 
-        $tickets = $this->mockTickets()
-            ->filter(fn ($ticket) => in_array($ticket->status, ['open', 'pending', 'in_progress']))
-            ->values();
+        $tickets = Ticket::with(['agent'])
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['open', 'pending', 'in_progress'])
+            ->latest()
+            ->get();
 
         $stats = [
             'open' => $tickets->where('status', 'open')->count(),
@@ -159,9 +120,11 @@ class UserTicketController extends Controller
     {
         $user = $this->currentUser();
 
-        $tickets = $this->mockTickets()
-            ->filter(fn ($ticket) => in_array($ticket->status, ['resolved', 'closed']))
-            ->values();
+        $tickets = Ticket::with(['agent'])
+            ->where('user_id', $user->id)
+            ->whereIn('status', ['resolved', 'closed'])
+            ->latest()
+            ->get();
 
         $stats = [
             'resolved' => $tickets->where('status', 'resolved')->count(),
@@ -170,5 +133,43 @@ class UserTicketController extends Controller
         ];
 
         return view('user.tickets.history', compact('user', 'tickets', 'stats'));
+    }
+
+    public function show(Ticket $ticket)
+    {
+        $user = $this->currentUser();
+
+        $this->ensureTicketOwner($ticket, $user);
+
+        $ticket->load(['user', 'agent']);
+
+        $messages = $ticket->messages()
+            ->with('sender')
+            ->get();
+
+        return view('user.tickets.show', compact('user', 'ticket', 'messages'));
+    }
+
+    public function storeMessage(Request $request, Ticket $ticket)
+    {
+        $user = $this->currentUser();
+
+        $this->ensureTicketOwner($ticket, $user);
+
+        $request->validate([
+            'message' => ['required', 'string', 'max:2000'],
+        ], [
+            'message.required' => 'Le message est obligatoire.',
+            'message.max' => 'Le message ne doit pas dépasser 2000 caractères.',
+        ]);
+
+        TicketMessage::create([
+            'ticket_id' => $ticket->id,
+            'sender_id' => $user->id,
+            'message' => $request->message,
+        ]);
+
+        return redirect()->to(route('user.tickets.show', $ticket->id) . '#conversation')
+            ->with('success', 'Votre message a été envoyé avec succès.');
     }
 }
