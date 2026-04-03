@@ -19,9 +19,9 @@ use App\Http\Controllers\UserProfileController;
 | AUTH PAGE
 |--------------------------------------------------------------------------
 */
-Route::get('/auth', function () {
-    return view('auth');
-})->name('auth');
+Route::get('/', function () {
+    return redirect('/auth');
+});
 
 /*
 |--------------------------------------------------------------------------
