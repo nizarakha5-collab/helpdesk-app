@@ -15,7 +15,7 @@ class AdminUsersController extends Controller
         }
     }
 
-    // Page Create Accounts: Admin + Agent فقط
+    // Page Create Accounts: Admin + Agent 
     public function index()
     {
         $this->ensureAdmin();

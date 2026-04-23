@@ -232,37 +232,46 @@
                 <span class="badge">{{ $activeTicketsCount }}</span>
             </a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">💬</span>
-                <span>Chat admin</span>
-                <span class="badge">0</span>
-            </a>
+          @php
+    $adminChatUnreadCount = \App\Models\AdminAgentMessage::where('receiver_id', session('user_id'))
+        ->where('is_read', false)
+        ->whereHas('sender', function ($query) {
+            $query->where('role', 'admin');
+        })
+        ->count();
+@endphp
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">🕘</span>
-                <span>Historique</span>
-            </a>
+<a href="{{ route('agent.chat.index') }}" class="menu-item {{ request()->routeIs('agent.chat.*') ? 'active' : '' }}">
+    <span class="menu-icon">💬</span>
+    <span>Chat admin</span>
+    <span class="badge">{{ $adminChatUnreadCount }}</span>
+</a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">📊</span>
-                <span>Rapports</span>
-            </a>
+           <a href="{{ route('agent.history') }}" class="menu-item {{ request()->routeIs('agent.history') ? 'active' : '' }}">
+    <span class="menu-icon">🕘</span>
+    <span>Historique</span>
+</a>
+
+<a href="{{ route('agent.reports') }}" class="menu-item {{ request()->routeIs('agent.reports') ? 'active' : '' }}">
+    <span class="menu-icon">📊</span>
+    <span>Rapports</span>
+</a>
         </nav>
 
         <div class="sidebar-section-title">Compte</div>
         <nav class="menu">
-            <a href="#" class="menu-item">
-                <span class="menu-icon">🔔</span>
-                <span>Notifications</span>
-                <span class="badge">0</span>
+            <a href="{{ route('agent.notifications') }}" class="menu-item {{ request()->routeIs('agent.notifications') ? 'active' : '' }}">
+    <span class="menu-icon">🔔</span>
+    <span>Notifications</span>
+    <span class="badge">{{ \App\Models\UserNotification::where('user_id', session('user_id'))->where('is_read', false)->count() }}</span>
+</a>
+
+            <a href="{{ route('agent.profile') }}" class="menu-item {{ request()->routeIs('agent.profile') ? 'active' : '' }}">
+                 <span class="menu-icon">👤</span>
+                 <span>Profil</span>
             </a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">👤</span>
-                <span>Profil</span>
-            </a>
-
-            <a href="#" class="menu-item">
+            <a href="{{ route('agent.settings') }}" class="menu-item {{ request()->routeIs('agent.settings') ? 'active' : '' }}">
                 <span class="menu-icon">⚙</span>
                 <span>Paramètres</span>
             </a>
@@ -389,32 +398,32 @@
             </div>
 
             <div class="quick-card">
-                <div class="quick-header">
-                    <div class="quick-title">Accès rapide</div>
-                </div>
+    <div class="quick-header">
+        <div class="quick-title">Accès rapide</div>
+    </div>
 
-                <div class="quick-links">
-                    <a href="{{ route('agent.tickets.index') }}" class="quick-link">
-                        <div class="quick-link-title">Tickets</div>
-                        <div class="quick-link-text">Liste complète des tickets et filtres.</div>
-                    </a>
+    <div class="quick-links">
+        <a href="{{ route('agent.tickets.index') }}" class="quick-link">
+            <div class="quick-link-title">Tickets</div>
+            <div class="quick-link-text">Liste complète des tickets et filtres.</div>
+        </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Chat admin</div>
-                        <div class="quick-link-text">Escalade et questions à l’administrateur.</div>
-                    </a>
+        <a href="{{ route('agent.chat.index') }}" class="quick-link">
+    <div class="quick-link-title">Chat admin</div>
+    <div class="quick-link-text">Escalade et questions à l’administrateur.</div>
+</a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Historique</div>
-                        <div class="quick-link-text">Historique des tickets résolus.</div>
-                    </a>
+        <a href="{{ route('agent.history') }}" class="quick-link">
+            <div class="quick-link-title">Historique</div>
+            <div class="quick-link-text">Historique des tickets résolus.</div>
+        </a>
 
-                    <a href="#" class="quick-link">
-                        <div class="quick-link-title">Rapports</div>
-                        <div class="quick-link-text">Statistiques et performance.</div>
-                    </a>
-                </div>
-            </div>
+        <a href="{{ route('agent.reports') }}" class="quick-link">
+            <div class="quick-link-title">Rapports</div>
+            <div class="quick-link-text">Statistiques et performance.</div>
+        </a>
+    </div>
+</div>
         </section>
     </main>
 </div>

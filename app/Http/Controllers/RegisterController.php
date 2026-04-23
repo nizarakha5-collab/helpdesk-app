@@ -28,13 +28,15 @@ class RegisterController extends Controller
         $verificationCode = (string) random_int(100000, 999999);
 
         $user = User::create([
-            'username'          => $validated['username'],
-            'email'             => $validated['email'],
-            'password'          => Hash::make($validated['password']),
-            'status'            => 'pending_email',
-            'verification_code' => $verificationCode,
-            'code_expires_at'   => now()->addMinutes(10),
-        ]);
+    'username'               => $validated['username'],
+    'email'                  => $validated['email'],
+    'password'               => Hash::make($validated['password']),
+    'status'                 => 'pending_email',
+    'verification_code'      => $verificationCode,
+    'code_expires_at'        => now()->addMinutes(10),
+    'auth_provider'          => 'local',
+    'password_initialized_at'=> now(),
+]);
 
         Mail::to($user->email)->send(new VerificationCodeMail($verificationCode));
 

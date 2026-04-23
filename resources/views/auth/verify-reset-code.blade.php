@@ -3,25 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mot de passe oublié | Helpdesk</title>
+    <title>Vérifier le code | Helpdesk</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: "Poppins", sans-serif;
             background: #dfe4f4;
             color: #202533;
         }
-
         .page {
             min-height: 100vh;
             display: flex;
@@ -29,7 +23,6 @@
             justify-content: center;
             padding: 24px;
         }
-
         .card {
             width: 100%;
             max-width: 520px;
@@ -38,21 +31,17 @@
             box-shadow: 0 16px 32px rgba(33, 44, 84, 0.08);
             padding: 32px;
         }
-
         .title {
             font-size: 2rem;
             font-weight: 800;
-            color: #202533;
             margin-bottom: 10px;
         }
-
         .text {
             font-size: 0.98rem;
             color: #6f7d99;
             line-height: 1.7;
             margin-bottom: 22px;
         }
-
         .success-message {
             margin-bottom: 16px;
             padding: 12px 14px;
@@ -63,7 +52,6 @@
             color: #166534;
             border: 1px solid #bde7c9;
         }
-
         .error-message {
             margin-bottom: 16px;
             padding: 12px 14px;
@@ -74,18 +62,13 @@
             color: #b42318;
             border: 1px solid #f3c3c3;
         }
-
-        .field {
-            margin-bottom: 16px;
-        }
-
+        .field { margin-bottom: 16px; }
         .field label {
             display: block;
             font-size: 0.92rem;
             font-weight: 700;
             margin-bottom: 8px;
         }
-
         .field input {
             width: 100%;
             height: 48px;
@@ -96,12 +79,10 @@
             font-size: 0.95rem;
             outline: none;
         }
-
         .field input:focus {
             border-color: #93abef;
             box-shadow: 0 0 0 3px rgba(111, 146, 238, 0.1);
         }
-
         .btn {
             width: 100%;
             height: 48px;
@@ -113,7 +94,6 @@
             font-weight: 800;
             cursor: pointer;
         }
-
         .back-link {
             display: inline-block;
             margin-top: 16px;
@@ -121,7 +101,6 @@
             text-decoration: none;
             font-weight: 600;
         }
-
         .back-link:hover {
             text-decoration: underline;
         }
@@ -130,9 +109,9 @@
 <body>
     <main class="page">
         <section class="card">
-            <h1 class="title">Mot de passe oublié</h1>
+            <h1 class="title">Vérifier le code</h1>
             <p class="text">
-                Entrez votre adresse e-mail pour recevoir un code de réinitialisation.
+                Entrez le code reçu sur votre adresse e-mail.
             </p>
 
             @if (session('success'))
@@ -151,7 +130,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('password.forgot.send') }}">
+            <form method="POST" action="{{ route('password.code.verify') }}">
                 @csrf
 
                 <div class="field">
@@ -160,16 +139,27 @@
                         type="email"
                         id="email"
                         name="email"
-                        value="{{ old('email') }}"
-                        placeholder="Entrez votre adresse e-mail"
+                        value="{{ old('email', $email) }}"
+                        readonly
+                    >
+                </div>
+
+                <div class="field">
+                    <label for="code">Code</label>
+                    <input
+                        type="text"
+                        id="code"
+                        name="code"
+                        value="{{ old('code') }}"
+                        placeholder="Entrez le code à 6 chiffres"
                         required
                     >
                 </div>
 
-                <button type="submit" class="btn">Envoyer le code</button>
+                <button type="submit" class="btn">Vérifier le code</button>
             </form>
 
-            <a href="{{ route('auth') }}" class="back-link">Retour à la connexion</a>
+            <a href="{{ route('password.forgot.form') }}" class="back-link">Retour</a>
         </section>
     </main>
 </body>

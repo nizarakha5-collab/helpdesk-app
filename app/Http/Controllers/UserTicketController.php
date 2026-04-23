@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\TicketMessage;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 
 class UserTicketController extends Controller
@@ -81,7 +82,7 @@ class UserTicketController extends Controller
             'description.min' => 'La description doit contenir au moins 10 caractères.',
         ]);
 
-        Ticket::create([
+        $ticket = Ticket::create([
             'user_id' => $user->id,
             'code' => $this->generateTicketCode(),
             'subject' => $request->subject,
@@ -90,6 +91,32 @@ class UserTicketController extends Controller
             'status' => 'open',
             'description' => $request->description,
         ]);
+
+        UserNotification::create([
+            'user_id' => $user->id,
+            'type' => 'ticket_created',
+            'title' => 'Ticket créé',
+            'message' => "Votre ticket {$ticket->code} a été créé avec succès.",
+            'ticket_id' => $ticket->id,
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+
+        $agents = User::where('role', 'agent')
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($agents as $agent) {
+            UserNotification::create([
+                'user_id' => $agent->id,
+                'type' => 'new_ticket',
+                'title' => 'Nouveau ticket',
+                'message' => "Un nouveau ticket {$ticket->code} a été créé par {$user->username}.",
+                'ticket_id' => $ticket->id,
+                'is_read' => false,
+                'read_at' => null,
+            ]);
+        }
 
         return redirect()
             ->route('user.tickets.index')
@@ -168,6 +195,18 @@ class UserTicketController extends Controller
             'sender_id' => $user->id,
             'message' => $request->message,
         ]);
+
+        if ($ticket->assigned_to) {
+            UserNotification::create([
+                'user_id' => $ticket->assigned_to,
+                'type' => 'ticket_user_reply',
+                'title' => 'Nouvelle réponse utilisateur',
+                'message' => "L’utilisateur a répondu sur le ticket {$ticket->code}.",
+                'ticket_id' => $ticket->id,
+                'is_read' => false,
+                'read_at' => null,
+            ]);
+        }
 
         return redirect()->to(route('user.tickets.show', $ticket->id) . '#conversation')
             ->with('success', 'Votre message a été envoyé avec succès.');

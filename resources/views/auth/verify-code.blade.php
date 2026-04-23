@@ -242,7 +242,7 @@
                 </p>
                 @if (!empty($verified) && $verified)
                 <div class="success-message">
-                     Email vérifié. Tsna admin y9bel lcompte.
+                     Email vérifié , en attente de validation par l’administrateur.
                 </div>
                 @endif
                 @if ($errors->any())

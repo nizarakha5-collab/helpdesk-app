@@ -372,10 +372,20 @@
                 <span>Create Accounts</span>
             </a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">✉</span>
-                <span>Contact</span>
-            </a>
+           @php
+    $agentChatUnreadCount = \App\Models\AdminAgentMessage::where('receiver_id', session('user_id'))
+        ->where('is_read', false)
+        ->whereHas('sender', function ($query) {
+            $query->where('role', 'agent');
+        })
+        ->count();
+@endphp
+
+<a href="{{ route('admin.chat.index') }}" class="menu-item {{ request()->routeIs('admin.chat.*') ? 'active' : '' }}">
+    <span class="menu-icon">✉</span>
+    <span>Chat agents</span>
+    <span class="badge">{{ $agentChatUnreadCount }}</span>
+</a>
         </nav>
 
         <div class="sidebar-section-title">Account</div>
@@ -386,16 +396,21 @@
                 <span>Liste des Accounts</span>
             </a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">🔔</span>
-                <span>Notifications</span>
-                <span class="badge">0</span>
-            </a>
+            @php
+    $adminNotificationsCount = \App\Models\UserNotification::where('user_id', session('user_id'))
+        ->where('is_read', false)
+        ->count();
+@endphp
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">⚙</span>
-                <span>Settings</span>
-            </a>
+<a href="{{ route('admin.notifications') }}" class="menu-item {{ request()->routeIs('admin.notifications*') ? 'active' : '' }}">
+    <span class="menu-icon">🔔</span>
+    <span>Notifications</span>
+    <span class="badge">{{ $adminNotificationsCount }}</span>
+</a>
+<a href="{{ route('admin.settings') }}" class="menu-item {{ request()->routeIs('admin.settings') ? 'active' : '' }}">
+    <span class="menu-icon">⚙</span>
+    <span>Settings</span>
+</a>
 
             <a href="{{ route('logout') }}" class="menu-item">
                 <span class="menu-icon">⇦</span>

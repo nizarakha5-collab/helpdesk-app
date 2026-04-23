@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 
 class VerifyCodeController extends Controller
@@ -60,6 +61,23 @@ class VerifyCodeController extends Controller
             'verification_code' => null,
             'code_expires_at' => null,
         ]);
+
+        $admins = User::where('role', 'admin')
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($admins as $admin) {
+            UserNotification::create([
+                'user_id' => $admin->id,
+                'type' => 'pending_account',
+                'title' => 'Nouveau compte à valider',
+                'message' => "Le compte {$user->username} est en attente de validation administrateur.",
+                'ticket_id' => null,
+                'related_user_id' => $user->id,
+                'is_read' => false,
+                'read_at' => null,
+            ]);
+        }
 
         session(['verify_email' => $user->email]);
 

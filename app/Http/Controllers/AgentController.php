@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Ticket;
 use App\Models\User;
 use App\Models\TicketMessage;
+use App\Models\UserNotification;
 use Illuminate\Http\Request;
 
 class AgentController extends Controller
@@ -16,6 +17,35 @@ class AgentController extends Controller
         }
 
         return User::findOrFail(session('user_id'));
+    }
+
+    protected function createUserNotification(Ticket $ticket, string $type, string $title, string $message): void
+    {
+        if (!$ticket->user_id) {
+            return;
+        }
+
+        UserNotification::create([
+            'user_id' => $ticket->user_id,
+            'type' => $type,
+            'title' => $title,
+            'message' => $message,
+            'ticket_id' => $ticket->id,
+            'is_read' => false,
+            'read_at' => null,
+        ]);
+    }
+
+    protected function statusLabel(string $status): string
+    {
+        return match ($status) {
+            'open' => 'Ouvert',
+            'pending' => 'En attente',
+            'in_progress' => 'En cours',
+            'resolved' => 'Résolu',
+            'closed' => 'Fermé',
+            default => $status,
+        };
     }
 
     public function dashboard()
@@ -92,6 +122,109 @@ class AgentController extends Controller
         ));
     }
 
+    public function history(Request $request)
+    {
+        $agent = $this->currentAgent();
+
+        $query = Ticket::with(['user', 'agent'])
+            ->where('assigned_to', $agent->id)
+            ->whereIn('status', ['resolved', 'closed'])
+            ->latest();
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('priority')) {
+            $query->where('priority', $request->priority);
+        }
+
+        if ($request->filled('category')) {
+            $query->where('category', $request->category);
+        }
+
+        $tickets = $query->get();
+
+        $availableCategories = Ticket::where('assigned_to', $agent->id)
+            ->whereIn('status', ['resolved', 'closed'])
+            ->select('category')
+            ->distinct()
+            ->orderBy('category')
+            ->pluck('category');
+
+        $stats = [
+            'total' => Ticket::where('assigned_to', $agent->id)->whereIn('status', ['resolved', 'closed'])->count(),
+            'resolved' => Ticket::where('assigned_to', $agent->id)->where('status', 'resolved')->count(),
+            'closed' => Ticket::where('assigned_to', $agent->id)->where('status', 'closed')->count(),
+        ];
+
+        $filters = [
+            'status' => $request->status,
+            'priority' => $request->priority,
+            'category' => $request->category,
+        ];
+
+        return view('agent.history', compact(
+            'agent',
+            'tickets',
+            'availableCategories',
+            'stats',
+            'filters'
+        ));
+    }
+
+    public function reports()
+    {
+        $agent = $this->currentAgent();
+
+        $baseQuery = Ticket::where('assigned_to', $agent->id);
+
+        $myTotalTickets = (clone $baseQuery)->count();
+        $myOpenTickets = (clone $baseQuery)->where('status', 'open')->count();
+        $myPendingTickets = (clone $baseQuery)->where('status', 'pending')->count();
+        $myInProgressTickets = (clone $baseQuery)->where('status', 'in_progress')->count();
+        $myResolvedTickets = (clone $baseQuery)->where('status', 'resolved')->count();
+        $myClosedTickets = (clone $baseQuery)->where('status', 'closed')->count();
+        $myUrgentTickets = (clone $baseQuery)->where('priority', 'urgent')->count();
+
+        $completedTickets = $myResolvedTickets + $myClosedTickets;
+        $completionRate = $myTotalTickets > 0 ? round(($completedTickets / $myTotalTickets) * 100) : 0;
+
+        $priorityStats = Ticket::where('assigned_to', $agent->id)
+            ->selectRaw('priority, COUNT(*) as total')
+            ->groupBy('priority')
+            ->orderByRaw("FIELD(priority, 'urgent', 'high', 'medium', 'low')")
+            ->get();
+
+        $categoryStats = Ticket::where('assigned_to', $agent->id)
+            ->selectRaw('category, COUNT(*) as total')
+            ->groupBy('category')
+            ->orderBy('total', 'desc')
+            ->get();
+
+        $recentHandledTickets = Ticket::with(['user'])
+            ->where('assigned_to', $agent->id)
+            ->whereIn('status', ['resolved', 'closed'])
+            ->latest()
+            ->take(8)
+            ->get();
+
+        return view('agent.reports', compact(
+            'agent',
+            'myTotalTickets',
+            'myOpenTickets',
+            'myPendingTickets',
+            'myInProgressTickets',
+            'myResolvedTickets',
+            'myClosedTickets',
+            'myUrgentTickets',
+            'completionRate',
+            'priorityStats',
+            'categoryStats',
+            'recentHandledTickets'
+        ));
+    }
+
     public function show(Ticket $ticket)
     {
         $agent = $this->currentAgent();
@@ -123,11 +256,14 @@ class AgentController extends Controller
             'message.max' => 'Le message ne doit pas dépasser 2000 caractères.',
         ]);
 
+        $statusChangedToInProgress = false;
+
         if (!$ticket->assigned_to) {
             $ticket->assigned_to = $agent->id;
 
             if ($ticket->status === 'open') {
                 $ticket->status = 'in_progress';
+                $statusChangedToInProgress = true;
             }
 
             $ticket->save();
@@ -139,6 +275,22 @@ class AgentController extends Controller
             'message' => $request->message,
         ]);
 
+        if ($statusChangedToInProgress) {
+            $this->createUserNotification(
+                $ticket,
+                'ticket_status_changed',
+                'Statut du ticket mis à jour',
+                "Le statut de votre ticket {$ticket->code} est maintenant : En cours."
+            );
+        }
+
+        $this->createUserNotification(
+            $ticket,
+            'ticket_new_reply',
+            'Nouvelle réponse du support',
+            "Le support a répondu à votre ticket {$ticket->code}."
+        );
+
         return redirect()->to(route('agent.tickets.show', $ticket->id) . '#conversation')
             ->with('success', 'Le message a été envoyé avec succès.');
     }
@@ -147,13 +299,25 @@ class AgentController extends Controller
     {
         $agent = $this->currentAgent();
 
+        $statusChangedToInProgress = false;
+
         $ticket->assigned_to = $agent->id;
 
         if ($ticket->status === 'open') {
             $ticket->status = 'in_progress';
+            $statusChangedToInProgress = true;
         }
 
         $ticket->save();
+
+        if ($statusChangedToInProgress) {
+            $this->createUserNotification(
+                $ticket,
+                'ticket_status_changed',
+                'Ticket pris en charge',
+                "Votre ticket {$ticket->code} est maintenant pris en charge par le support."
+            );
+        }
 
         return back()->with('success', 'Le ticket vous a été attribué avec succès.');
     }
@@ -192,6 +356,13 @@ class AgentController extends Controller
         }
 
         $ticket->save();
+
+        $this->createUserNotification(
+            $ticket,
+            'ticket_status_changed',
+            'Statut du ticket mis à jour',
+            "Le statut de votre ticket {$ticket->code} est maintenant : {$this->statusLabel($newStatus)}."
+        );
 
         return redirect()
             ->route('agent.tickets.show', $ticket->id)

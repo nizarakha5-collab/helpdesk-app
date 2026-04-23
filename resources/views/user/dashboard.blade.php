@@ -1,10 +1,19 @@
 @php
+$notificationsUrl = Route::has('user.notifications') ? route('user.notifications') : '#';
+$unreadNotificationsCount = 0;
+
+if (session('user_id')) {
+    $unreadNotificationsCount = \App\Models\UserNotification::where('user_id', session('user_id'))
+        ->where('is_read', false)
+        ->count();
+}
     $dashboardUrl = Route::has('user.dashboard') ? route('user.dashboard') : '#';
     $createTicketUrl = Route::has('user.tickets.create') ? route('user.tickets.create') : '#';
     $myTicketsUrl = Route::has('user.tickets.index') ? route('user.tickets.index') : '#';
     $historyUrl = Route::has('user.tickets.history') ? route('user.tickets.history') : '#';
     $profileUrl = Route::has('user.profile') ? route('user.profile') : '#';
     $logoutUrl = Route::has('logout') ? route('logout') : '#';
+    $settingsUrl = Route::has('user.settings') ? route('user.settings') : '#';
 
     $displayName = $user->username ?? session('user_name', 'Utilisateur');
     $displayEmail = $user->email ?? session('user_email', '-');
@@ -517,21 +526,21 @@
 
         <div class="sidebar-section-title">Compte</div>
         <nav class="menu">
-            <a href="#" class="menu-item">
-                <span class="menu-icon">🔔</span>
-                <span>Notifications</span>
-                <span class="badge">0</span>
-            </a>
+            <a href="{{ $notificationsUrl }}" class="menu-item {{ request()->routeIs('user.notifications') ? 'active' : '' }}">
+    <span class="menu-icon">🔔</span>
+    <span>Notifications</span>
+    <span class="badge">{{ $unreadNotificationsCount }}</span>
+</a>
 
             <a href="{{ $profileUrl }}" class="menu-item {{ request()->routeIs('user.profile') ? 'active' : '' }}">
                 <span class="menu-icon">👤</span>
                 <span>Profil</span>
             </a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">⚙</span>
-                <span>Paramètres</span>
-            </a>
+         <a href="{{ $settingsUrl }}" class="menu-item {{ request()->routeIs('user.settings') ? 'active' : '' }}">
+            <span class="menu-icon">⚙</span>
+            <span>Paramètres</span>
+          </a>
 
             <a href="{{ $logoutUrl }}" class="menu-item">
                 <span class="menu-icon">⇦</span>

@@ -1,4 +1,12 @@
 @php
+   $notificationsUrl = Route::has('user.notifications') ? route('user.notifications') : '#';
+$unreadNotificationsCount = 0;
+
+if (session('user_id')) {
+    $unreadNotificationsCount = \App\Models\UserNotification::where('user_id', session('user_id'))
+        ->where('is_read', false)
+        ->count();
+}
     $currentUser = $user ?? auth()->user();
 
     if (!$currentUser) {
@@ -699,21 +707,21 @@
 
         <div class="sidebar-section-title">Compte</div>
         <nav class="menu">
-            <a href="#" class="menu-item">
-                <span class="menu-icon">🔔</span>
-                <span>Notifications</span>
-                <span class="badge">0</span>
-            </a>
+           <a href="{{ $notificationsUrl }}" class="menu-item {{ request()->routeIs('user.notifications') ? 'active' : '' }}">
+    <span class="menu-icon">🔔</span>
+    <span>Notifications</span>
+    <span class="badge">{{ $unreadNotificationsCount }}</span>
+</a>
 
             <a href="{{ route('user.profile') }}" class="menu-item {{ request()->routeIs('user.profile') ? 'active' : '' }}">
                 <span class="menu-icon">👤</span>
                 <span>Profil</span>
             </a>
 
-            <a href="#" class="menu-item">
-                <span class="menu-icon">⚙</span>
-                <span>Paramètres</span>
-            </a>
+            <a href="{{ route('user.settings') }}" class="menu-item {{ request()->routeIs('user.settings') ? 'active' : '' }}">
+                  <span class="menu-icon">⚙</span>
+                 <span>Paramètres</span>
+             </a>
 
             <a href="{{ route('logout') }}" class="menu-item">
                 <span class="menu-icon">⇦</span>
